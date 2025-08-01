@@ -6,19 +6,16 @@ services:
     container_name: sigil-ps-api-dev
     build:
       context: .
-      dockerfile: api/Dockerfile
     volumes:
       - ./api:/app/api
     ports:
-      - "5000:5000"
+      - "80:80"
     env_file:
       - api/.env
-    profiles: ["dev"]
     environment:
-      - FLASK_APP=api.main
+      - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - PYTHONPATH=/app
-    command: flask run --host=0.0.0.0 --port=5000
+    profiles: ["dev"]
     networks:
       - appnet
     restart: always
@@ -30,55 +27,19 @@ services:
     container_name: sigil-ps-api-prod
     build:
       context: .
-      dockerfile: api/Dockerfile
     ports:
-      - "5000:5000"
+      - "80:80"
     env_file:
       - api/.env
-    profiles: ["prod"]
     environment:
-      - FLASK_APP=api.main
-      - FLASK_DEBUG=0
-    command: gunicorn -w 4 -b 0.0.0.0:5000 api.main:app
+      - FLASK_ENV=production
+    profiles: ["prod"]
+    command: gunicorn -w 4 -b 0.0.0.0:80 api.main:app
     networks:
       - appnet
     restart: always
     depends_on:
       - db
-
-  # --- Frontend: DEV ---
-  ui:
-    container_name: sigil-ps-ui-dev
-    build:
-        context: ./ui
-        target: dev
-    ports:
-        - "5173:5173"
-    env_file:
-        - ui/.env
-    profiles: ["dev"]
-    networks:
-        - appnet
-    restart: always
-    depends_on:
-      - api
-
-  # --- Frontend: PROD ---
-  ui-prod:
-    container_name: sigil-ps-ui-prod
-    build:
-      context: ./ui
-      target: prod
-      args:
-        VITE_API_BASE: /api
-    ports:
-      - "80:80"
-    profiles: ["prod"]
-    networks:
-      - appnet
-    restart: always
-    depends_on:
-      - api-prod
 
   # --- Database (shared) ---
   db:

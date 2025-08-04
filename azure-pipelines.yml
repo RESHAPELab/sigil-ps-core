@@ -28,22 +28,24 @@ stages:
         tags: |
           $(tag)
 
-- stage: DeployTest
+- stage: Test
   dependsOn: Build
-  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'dev'))
   jobs:
-    - job: DeployToTest
-      steps:
-        - script: |
-            echo "Deploying to test container app"
-          displayName: 'Deploy to test'
+    - deployment: DeployToTest
+      environment: Test
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - script: echo "Deploying to test..."
 
-- stage: DeployProd
+- stage: Production
   dependsOn: Build
-  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
   jobs:
-    - job: DeployToProd
-      steps:
-        - script: |
-            echo "Deploying to prod container app"
-          displayName: 'Deploy to prod'
+    - deployment: DeployToTest
+      environment: Production
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - script: echo "Deploying to test..."

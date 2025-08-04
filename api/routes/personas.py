@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from api.util.tiamat_db_functions import get_personas, add_persona, update_persona, delete_persona, get_persona, make_connection
+from api.util.db_util import get_personas, add_persona, update_persona, delete_persona, get_persona, make_connection
 from api.extensions import mysql
 
 personas_bp = Blueprint('personas', __name__)

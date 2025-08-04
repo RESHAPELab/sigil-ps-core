@@ -18,7 +18,6 @@ else:
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# from llm.tiamat import Tiamat
 import json
 
 # from dataset_util import get_actual_outputs_from_file

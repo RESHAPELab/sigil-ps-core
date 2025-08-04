@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, current_app
 from api.extensions import mysql
-from api.util.tiamat_db_functions import make_connection, get_personalization, update_personalization
+from api.util.db_util import make_connection, get_personalization, update_personalization
 
 personalization_bp = Blueprint('personalization', __name__)
 

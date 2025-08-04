@@ -1,5 +1,5 @@
 class Persona:
-    DEFAULT_NAME = "Tiamat"
+    DEFAULT_NAME = "Sigil"
     DEFAULT_DESCRIPTION = "A friendly computer science tutor for novice computer science students."
     DEFAULT_PROMPT = """
     When responding to students, follow these guidelines:

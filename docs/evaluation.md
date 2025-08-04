@@ -1,6 +1,6 @@
-# Tiamat Evaluation
+# SIGIL-PS Evaluation
 
-We have built our own evaluation module for Tiamat. It allows one to define reusable datasets and metrics in JSON files, and then define tests to run composed of different combinations of datasets and metrics. It is essentially just a wrapper around the DSPy evaluation module. Behind the scenes, it uses another LLM to evaluate chatbot responses.
+We have built our own evaluation module for Sigil. It allows one to define reusable datasets and metrics in JSON files, and then define tests to run composed of different combinations of datasets and metrics. It is essentially just a wrapper around the DSPy evaluation module. Behind the scenes, it uses another LLM to evaluate chatbot responses.
 
 ## Definitions
 

@@ -21,7 +21,7 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.AWS_EC2_USER }}@${{ secrets.AWS_EC2_HOST }} << 'EOF'
-            cd tiamat-backend
+            cd sigil-ps-core
             git pull origin main
             sudo docker-compose down
             sudo docker-compose --profile prod up --build -d

@@ -1,5 +1,5 @@
-# Tiamat Backend
-This is the repository for the backend component of the conversational agent Tiamat, developed by NAU's RESHAPE Lab.
+# SIGIL-PS Core
+This is the repository for the backend component of the conversational agent SIGIL-PS (or just Sigil), developed by NAU's RESHAPE Lab.
 
 ## Setup
 The server and database have been containerized via Docker. You will need to have Docker installed to run it.

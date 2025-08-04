@@ -10,7 +10,7 @@ verbose = len(sys.argv) > 1 and (sys.argv[1] == '-v' or sys.argv[1] == '--verbos
 gpt = dspy.LM('openai/gpt-4o-mini')
 dspy.settings.configure(lm=gpt)
 
-class Tiamat(dspy.Module):
+class Sigil(dspy.Module):
     def __init__(self, history_capacity=6, feedback_capacity=3):
         self.history_capacity = history_capacity
         self.feedback_capacity = feedback_capacity
@@ -44,7 +44,7 @@ class Tiamat(dspy.Module):
 # Signature to reason about how to best personalize answer for student, given some extra info
 class Personalize(dspy.Signature):
     """
-    You are Tiamat, a friendly computer science tutor for novice computer science students. Help personalize
+    You are Sigil, a friendly computer science tutor for novice computer science students. Help personalize
     your future responses for this student by creating extra guidelines based on their feedback. However,
     ensure that the personalized guidelines do not violate any of these base guidelines:
 

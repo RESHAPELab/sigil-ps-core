@@ -32,7 +32,7 @@ class Config(object):
     """Configure me so examples work"""
 
     HOST = os.getenv("MYSQL_HOST")      # fill with your host address
-    DATABASE = 'tiamat_db'  # fill with your database
+    DATABASE = 'sigil_db'  # fill with your database
     USER = os.getenv("MYSQL_USER")      # fill with your username
     PASSWORD = os.getenv("MYSQL_PASSWORD")  # fill with your user's password
     PORT = 3306

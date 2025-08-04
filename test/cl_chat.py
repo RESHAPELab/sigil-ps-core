@@ -1,9 +1,9 @@
-from llm.tiamat import Tiamat
+from llm.sigil import Sigil
 from dspy import inspect_history
 
 MAX_MSG_LENGTH = 200
 
-chat = Tiamat()
+chat = Sigil()
 history = []
 feedback = []
 personalization = ""
@@ -31,13 +31,13 @@ while True:
     output = chat(message, code=code, history=history, personalization=personalization)
 
     history.append(f"Student: {message}")
-    history.append(f"Tiamat: {output.answer}")
+    history.append(f"Sigil: {output.answer}")
 
     if show_history:
         print("\nDSPy History:\n")
         inspect_history(1)
 
-    print(f"Tiamat: {output.answer}")
+    print(f"Sigil: {output.answer}")
 
     print()
     get_feedback = input("Would you like to provide feedback for this response? (y/n) ").lower() == 'y'

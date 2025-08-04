@@ -30,7 +30,7 @@ stages:
 
 - stage: Test
   dependsOn: Build
-  condition: false
+  condition: succeeded()
   jobs:
     - deployment: DeployToTest
       environment: Test
@@ -42,7 +42,7 @@ stages:
 
 - stage: Production
   dependsOn: Build
-  condition: false
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
   jobs:
     - deployment: DeployToTest
       environment: Production

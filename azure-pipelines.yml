@@ -27,3 +27,23 @@ stages:
         dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
         tags: |
           $(tag)
+
+- stage: DeployTest
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'dev'))
+  jobs:
+    - job: DeployToTest
+      steps:
+        - script: |
+            echo "Deploying to test container app"
+          displayName: 'Deploy to test'
+
+- stage: DeployProd
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+  jobs:
+    - job: DeployToProd
+      steps:
+        - script: |
+            echo "Deploying to prod container app"
+          displayName: 'Deploy to prod'

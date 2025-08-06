@@ -23,6 +23,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+import ssl
 from dotenv import load_dotenv
 import os
 
@@ -32,7 +33,7 @@ class Config(object):
     """Configure me so examples work"""
 
     HOST = os.getenv("MYSQL_HOST")      # fill with your host address
-    DATABASE = 'sigil_db'  # fill with your database
+    DATABASE = os.getenv("MYSQL_DATABASE")  # fill with your database
     USER = os.getenv("MYSQL_USER")      # fill with your username
     PASSWORD = os.getenv("MYSQL_PASSWORD")  # fill with your user's password
     PORT = 3306
@@ -41,6 +42,7 @@ class Config(object):
     UNICODE = True
     WARNINGS = True
     CONNECT_TIMEOUT = 10  # Increase the connection timeout to 10 seconds
+    SSL_CA = "/certs/DigiCertGlobalRootCA.crt.pem"
 
     @classmethod
     def dbinfo(cls):
@@ -54,4 +56,5 @@ class Config(object):
             'get_warnings': cls.WARNINGS,
             'port': cls.PORT,
             'connect_timeout': cls.CONNECT_TIMEOUT,
+            'ssl_ca': cls.SSL_CA
         }

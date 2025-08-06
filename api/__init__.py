@@ -25,6 +25,14 @@ def create_app():
     app.config['MYSQL_CHARSET'] = Config.CHARSET
     app.config['MYSQL_USE_UNICODE'] = Config.UNICODE
 
+    # SSL config
+    app.config['MYSQL_CUSTOM_OPTIONS'] = {
+        'ssl': {
+            'ca': Config.SSL_CA
+        },
+        'ssl_mode': 'VERIFY_CA'
+    }
+
     # Set up logging for the app
     logging.basicConfig(
         level=logging.INFO,
@@ -44,6 +52,7 @@ def create_app():
     app.logger.info("Initializing database...")
     with app.app_context():
         init_database(mysql)
+        pass
     app.logger.info("Database initialized.")
 
     app.logger.info("Initializing CORS...")

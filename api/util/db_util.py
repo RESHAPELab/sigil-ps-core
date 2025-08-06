@@ -1,4 +1,5 @@
 from flask import current_app
+from api.util.db_config import Config
 from llm.personas import Persona
 
 #RUN THIS FIRST TO CREATE THE DATABASE
@@ -7,8 +8,8 @@ def init_database(sqlObj):
     try:
         cursor = sqlObj.connection.cursor()
 
-        cursor.execute("CREATE DATABASE IF NOT EXISTS sigil_db")
-        cursor.execute("USE sigil_db")
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {Config.DATABASE}")
+        cursor.execute(f"USE {Config.DATABASE}")
 
         with open('api/util/schema.sql', 'r') as schema_file:
             schema = schema_file.read()

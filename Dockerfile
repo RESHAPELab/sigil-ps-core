@@ -16,6 +16,7 @@ WORKDIR /app
 # Copy API and llm code
 COPY ./api ./api
 COPY ./llm ./llm
+COPY /certs /certs
 
 # Copy and install requirements
 COPY requirements.txt .

@@ -22,7 +22,7 @@ stages:
     steps:
     - task: Docker@2
       inputs:
-        repository: 'sigil_api'
+        repository: 'sigil-api'
         containerRegistry: 'SIGIL-PS ACR'
         command: 'buildAndPush'
         Dockerfile: '**/Dockerfile'
@@ -49,6 +49,7 @@ stages:
         acrName: 'reshapelab'
         acrUsername: 'reshapelab'
         acrPassword: '$(ACR-Password)'
+        imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
         containerAppName: 'sigil-api-test'
         resourceGroup: 'reshapelab'
         containerAppEnvironment: 'Test'

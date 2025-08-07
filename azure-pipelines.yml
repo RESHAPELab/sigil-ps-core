@@ -79,6 +79,6 @@ stages:
         imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
         containerAppName: 'sigil-api'
         resourceGroup: 'reshapelab'
-        containerAppEnvironment: 'Production'
+        containerAppEnvironment: 'Test'
         targetPort: '80'
         environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Production) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'

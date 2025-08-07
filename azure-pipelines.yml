@@ -1,9 +1,12 @@
-# Docker
-# Build a Docker image
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
 trigger:
-- main
+  branches:
+    include:
+      - feat-*
+
+pr:
+  branches:
+    include:
+      - main
 
 resources:
 - repo: self
@@ -31,6 +34,7 @@ stages:
 
 - stage: Test
   displayName: Deploy Test
+  condition: succeeded()
   jobs:
   - deployment: DeployTestContainerApp
     environment: 'Test'
@@ -62,6 +66,7 @@ stages:
 
 - stage: Production
   displayName: Deploy Production
+  condition: succeeded()
   jobs:
   - deployment: DeployProdContainerApp
     environment: 'Production'

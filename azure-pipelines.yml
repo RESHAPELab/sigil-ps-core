@@ -32,53 +32,61 @@ stages:
 - stage: Test
   displayName: Deploy Test
   jobs:
-  - job: DeployContainerApp
-    displayName: Deploy Container App
+  - deployment: DeployTestContainerApp
+    environment: 'Test'
+    displayName: Deploy to Test Container App
     pool:
       name: local
-    steps:
-    - task: AzureKeyVault@2
-      inputs:
-        azureSubscription: 'Azure for Students Subscription'
-        KeyVaultName: 'reshapelab-sigil-ps'
-        SecretsFilter: '*'
-        RunAsPreJob: true
-    - task: AzureContainerApps@1
-      inputs:
-        azureSubscription: 'Azure for Students Subscription'
-        acrName: 'reshapelab'
-        acrUsername: 'reshapelab'
-        acrPassword: '$(ACR-Password)'
-        imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
-        containerAppName: 'sigil-api-test'
-        resourceGroup: 'reshapelab'
-        containerAppEnvironment: 'Test'
-        targetPort: '80'
-        environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Test) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              KeyVaultName: 'reshapelab-sigil-ps'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+          - task: AzureContainerApps@1
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              acrName: 'reshapelab'
+              acrUsername: 'reshapelab'
+              acrPassword: '$(ACR-Password)'
+              imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
+              containerAppName: 'sigil-api-test'
+              resourceGroup: 'reshapelab'
+              containerAppEnvironment: 'Test'
+              targetPort: '80'
+              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Test) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'
 
 - stage: Production
   displayName: Deploy Production
   jobs:
-  - job: DeployContainerApp
-    displayName: Deploy Container App
+  - deployment: DeployProdContainerApp
+    environment: 'Production'
+    displayName: Deploy to Prod Container App
     pool:
       name: local
-    steps:
-    - task: AzureKeyVault@2
-      inputs:
-        azureSubscription: 'Azure for Students Subscription'
-        KeyVaultName: 'reshapelab-sigil-ps'
-        SecretsFilter: '*'
-        RunAsPreJob: true
-    - task: AzureContainerApps@1
-      inputs:
-        azureSubscription: 'Azure for Students Subscription'
-        acrName: 'reshapelab'
-        acrUsername: 'reshapelab'
-        acrPassword: '$(ACR-Password)'
-        imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
-        containerAppName: 'sigil-api'
-        resourceGroup: 'reshapelab'
-        containerAppEnvironment: 'Test'
-        targetPort: '80'
-        environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Production) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              KeyVaultName: 'reshapelab-sigil-ps'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+          - task: AzureContainerApps@1
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              acrName: 'reshapelab'
+              acrUsername: 'reshapelab'
+              acrPassword: '$(ACR-Password)'
+              imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
+              containerAppName: 'sigil-api'
+              resourceGroup: 'reshapelab'
+              containerAppEnvironment: 'Test'
+              targetPort: '80'
+              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Production) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'

@@ -1,9 +1,12 @@
-# Docker
-# Build a Docker image
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
 trigger:
-- main
+  branches:
+    include:
+      - feat-*
+
+pr:
+  branches:
+    include:
+      - main
 
 resources:
 - repo: self
@@ -13,41 +16,82 @@ variables:
 
 stages:
 - stage: Build
-  displayName: Build image
+  displayName: Build
   jobs:
-  - job: Build
-    displayName: Build
+  - job: BuildAndPush
+    displayName: Build and Push
     pool:
       name: local
     steps:
     - task: Docker@2
-      displayName: Build an image
       inputs:
-        command: build
-        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+        repository: 'sigil-api'
+        containerRegistry: 'SIGIL-PS ACR'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
         tags: |
           $(tag)
 
 - stage: Test
-  dependsOn: Build
+  displayName: Deploy Test
   condition: succeeded()
   jobs:
-    - deployment: DeployToTest
-      environment: Test
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - script: echo "Deploying to test..."
+  - deployment: DeployTestContainerApp
+    environment: 'Test'
+    displayName: Deploy to Test Container App
+    pool:
+      name: local
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              KeyVaultName: 'reshapelab-sigil-ps'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+          - task: AzureContainerApps@1
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              acrName: 'reshapelab'
+              acrUsername: 'reshapelab'
+              acrPassword: '$(ACR-Password)'
+              imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
+              containerAppName: 'sigil-api-test'
+              resourceGroup: 'reshapelab'
+              containerAppEnvironment: 'Test'
+              targetPort: '80'
+              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Test) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'
 
 - stage: Production
-  dependsOn: Build
-  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+  displayName: Deploy Production
+  condition: succeeded()
   jobs:
-    - deployment: DeployToTest
-      environment: Production
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - script: echo "Deploying to test..."
+  - deployment: DeployProdContainerApp
+    environment: 'Production'
+    displayName: Deploy to Prod Container App
+    pool:
+      name: local
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              KeyVaultName: 'reshapelab-sigil-ps'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+          - task: AzureContainerApps@1
+            inputs:
+              azureSubscription: 'Azure for Students Subscription'
+              acrName: 'reshapelab'
+              acrUsername: 'reshapelab'
+              acrPassword: '$(ACR-Password)'
+              imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
+              containerAppName: 'sigil-api'
+              resourceGroup: 'reshapelab'
+              containerAppEnvironment: 'Test'
+              targetPort: '80'
+              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Production) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'

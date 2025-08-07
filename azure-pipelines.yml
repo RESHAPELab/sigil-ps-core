@@ -13,10 +13,10 @@ variables:
 
 stages:
 - stage: Build
-  displayName: Build and push
+  displayName: Build
   jobs:
-  - job: Build
-    displayName: Build
+  - job: BuildAndPush
+    displayName: Build and Push
     pool:
       name: local
     steps:
@@ -26,3 +26,31 @@ stages:
         containerRegistry: 'SIGIL-PS ACR'
         command: 'buildAndPush'
         Dockerfile: '**/Dockerfile'
+        tags: |
+          $(tag)
+
+- stage: Test
+  displayName: Deploy Test
+  jobs:
+  - job: DeployContainerApp
+    displayName: Deploy Container App
+    pool:
+      name: local
+    steps:
+    - task: AzureKeyVault@2
+      inputs:
+        azureSubscription: 'Azure for Students Subscription'
+        KeyVaultName: 'reshapelab-sigil-ps'
+        SecretsFilter: '*'
+        RunAsPreJob: true
+    - task: AzureContainerApps@1
+      inputs:
+        azureSubscription: 'Azure for Students Subscription'
+        acrName: 'reshapelab'
+        acrUsername: 'reshapelab'
+        acrPassword: '$(ACR-Password)'
+        containerAppName: 'sigil-api-test'
+        resourceGroup: 'reshapelab'
+        containerAppEnvironment: 'Test'
+        targetPort: '80'
+        environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Test) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password)'

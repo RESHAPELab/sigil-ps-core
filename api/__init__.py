@@ -25,13 +25,14 @@ def create_app():
     app.config['MYSQL_CHARSET'] = Config.CHARSET
     app.config['MYSQL_USE_UNICODE'] = Config.UNICODE
 
-    # SSL config
-    app.config['MYSQL_CUSTOM_OPTIONS'] = {
-        'ssl': {
-            'ca': Config.SSL_CA
-        },
-        'ssl_mode': 'VERIFY_CA'
-    }
+    # SSL config (only if set, which would only not be set in development)
+    if Config.SSL_CA:
+        app.config['MYSQL_CUSTOM_OPTIONS'] = {
+            'ssl': {
+                'ca': Config.SSL_CA
+            },
+            'ssl_mode': 'VERIFY_CA'
+        }
 
     # Set up logging for the app
     logging.basicConfig(

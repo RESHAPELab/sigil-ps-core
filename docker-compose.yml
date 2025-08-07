@@ -1,9 +1,10 @@
+# IMPORTANT: This setup is for local testing ONLY. Do not use this to deploy
 version: "3.9"
 
 services:
-  # --- API: DEV ---
+  # --- API (test/dev environment) ---
   api:
-    container_name: sigil-ps-api-dev
+    container_name: sigil-api-test
     build:
       context: .
     volumes:
@@ -15,40 +16,29 @@ services:
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-    profiles: ["dev"]
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=sigil_db
+      - MYSQL_USER=reshapelab_test
+      - MYSQL_PASSWORD=reshapeTest2025!
     networks:
       - appnet
     restart: always
     depends_on:
       - db
 
-  # --- API: PROD ---
-  api-prod:
-    container_name: sigil-ps-api-prod
-    build:
-      context: .
-    ports:
-      - "80:80"
-    env_file:
-      - api/.env
-    environment:
-      - FLASK_ENV=production
-    profiles: ["prod"]
-    command: gunicorn -w 4 -b 0.0.0.0:80 api.main:app
-    networks:
-      - appnet
-    restart: always
-    depends_on:
-      - db
-
-  # --- Database (shared) ---
+  # --- Test Database ---
   db:
     image: mysql:8.0
-    container_name: sigil-ps-mysql
+    container_name: sigil-mysql
     ports:
       - "3306"
-    env_file:
-      - api/.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=reshapeRoot2025!
+      - MYSQL_DATABASE=sigil_db
+      - MYSQL_USER=reshapelab_test
+      - MYSQL_PASSWORD=reshapeTest2025!
+      - MYSQL_SSL_DISABLED=true
+    command: --require_secure_transport=OFF # NEVER DO THIS IN PROD! FOR DEV TESTING PURPOSES ONLY
     volumes:
       - mysql_data:/var/lib/mysql
     restart: always

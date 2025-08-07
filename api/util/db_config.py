@@ -42,7 +42,7 @@ class Config(object):
     UNICODE = True
     WARNINGS = True
     CONNECT_TIMEOUT = 10  # Increase the connection timeout to 10 seconds
-    SSL_CA = "/certs/DigiCertGlobalRootCA.crt.pem"
+    SSL_CA = "./certs/DigiCertGlobalRootCA.crt.pem" if os.getenv("FLASK_ENV") != "development" else None
 
     @classmethod
     def dbinfo(cls):

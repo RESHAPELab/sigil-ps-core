@@ -3,9 +3,13 @@ from api.extensions import mysql
 from llm.sigil import Sigil
 from llm.personas import Persona
 from api.util.db_util import add_user, check_if_user_exists, make_connection, get_personalization, get_persona_by_name, add_interaction, update_user
+from os import environ
 
 prompt_bp = Blueprint('prompt', __name__)
 chat = Sigil()
+
+MAX_HISTORY = int(environ.get('MAX_HISTORY', 10))
+print(MAX_HISTORY)
 
 @prompt_bp.route('/prompt', methods=['POST'])
 def prompt_sigil():
@@ -23,6 +27,10 @@ def prompt_sigil():
     if not message or not user_id or not conversation_id:
         current_app.logger.error("Missing required data in prompt request")
         return jsonify({'message': 'Some required data is missing'}), 400
+
+    # Trim history to limit context size
+    current_app.logger.info(f"Original history length: {len(history)}, Max allowed: {MAX_HISTORY}")
+    history = history[-MAX_HISTORY:]
 
     cursor = make_connection(mysql)
     personalization = get_personalization(user_id, cursor) if personalize else ""

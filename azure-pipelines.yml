@@ -59,7 +59,7 @@ stages:
               resourceGroup: 'reshapelab'
               containerAppEnvironment: 'Test'
               targetPort: '80'
-              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Test) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password) MAX_HISTORY=10'
+              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key-Test) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Test) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password) MAX_HISTORY=10'
 
 - stage: Production
   displayName: Deploy Production

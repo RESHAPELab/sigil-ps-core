@@ -176,3 +176,7 @@ def change_opt_in_status(user_id, opt_in, cursor):
     )
     cursor.connection.commit()
     return cursor
+
+def get_field_study_opt_in_status(user_id, cursor):
+    cursor.execute("SELECT fieldStudyOptIn, fieldStudyOptInAt FROM users WHERE userID = %s", (user_id,))
+    return cursor.fetchone()

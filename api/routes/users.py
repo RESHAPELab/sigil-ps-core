@@ -1,8 +1,25 @@
 from flask import Blueprint, request, jsonify, current_app
 from api.extensions import mysql
-from api.util.db_util import change_opt_in_status
+from api.util.db_util import change_opt_in_status, get_field_study_opt_in_status
 
 users_bp = Blueprint('users', __name__)
+
+# GET route to retrieve user's opt-in status and timestamp
+@users_bp.route('/users/getFieldStudyOptInStatus/<int:user_id>', methods=['GET'])
+def get_opt_in_status_route(user_id):
+	try:
+		cursor = mysql.connection.cursor()
+		result = get_field_study_opt_in_status(user_id, cursor)
+		cursor.close()
+		if result is None:
+			return jsonify({'error': 'User not found'}), 404
+		return jsonify({
+			'fieldStudyOptIn': True if result[0] == 1 else False,
+			'fieldStudyOptInAt': result[1]
+		}), 200
+	except Exception as e:
+		current_app.logger.error(f"Error retrieving opt-in status: {e}", exc_info=True)
+		return jsonify({'error': str(e)}), 500
 
 # Route to change fieldStudyOptIn status for a user
 @users_bp.route('/users/changeFieldStudyOptInStatus', methods=['POST'])

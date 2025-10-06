@@ -39,11 +39,10 @@ CREATE TABLE IF NOT EXISTS personas (
     prompt TEXT
 );
 
-
 CREATE TABLE IF NOT EXISTS codefiles (
     uid INT AUTO_INCREMENT PRIMARY KEY,
     userID INT,
-    filename VARCHAR(255),
+    filename VARCHAR(255) UNIQUE,
     initialContent TEXT,
     currentContent TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

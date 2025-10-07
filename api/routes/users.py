@@ -90,6 +90,15 @@ def code_change_route():
 			current_content = existing_file[4]  # currentContent is 5th column
 			last_modified = existing_file[6]  # last_modified is 7th column
 			
+			if current_content.strip() == content.strip():
+				cursor.close()
+				return jsonify({
+					'message': 'No meaningful changes made, file not tracked',
+					'isNewFile': False,
+					'fileID': file_id,
+					'diffSize': 0
+				}), 200
+
 			# Generate unified diff with timestamps
 			current_time = datetime.now()
 			

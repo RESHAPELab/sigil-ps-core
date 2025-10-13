@@ -180,3 +180,34 @@ def change_opt_in_status(user_id, opt_in, cursor):
 def get_field_study_opt_in_status(user_id, cursor):
     cursor.execute("SELECT fieldStudyOptIn, fieldStudyOptInAt FROM users WHERE userID = %s", (user_id,))
     return cursor.fetchone()
+
+def get_codefile(user_id, filename, cursor):
+    """Get a code file for a specific user and filename"""
+    cursor.execute("SELECT * FROM codefiles WHERE userID = %s AND filename = %s", (user_id, filename))
+    result = cursor.fetchone()
+    return result
+
+def add_codefile(user_id, filename, content, cursor):
+    """Add a new code file"""
+    cursor.execute(
+        "INSERT INTO codefiles (userID, filename, initialContent, currentContent) VALUES (%s, %s, %s, %s)",
+        (user_id, filename, content, content)
+    )
+    cursor.connection.commit()
+    return cursor.lastrowid
+
+def update_codefile(file_id, new_content, cursor):
+    """Update the current content of a code file"""
+    cursor.execute(
+        "UPDATE codefiles SET currentContent = %s, last_modified = CURRENT_TIMESTAMP WHERE uid = %s",
+        (new_content, file_id)
+    )
+    cursor.connection.commit()
+
+def add_codechanges(file_id, diff, cursor):
+    """Add a code change entry with diff"""
+    cursor.execute(
+        "INSERT INTO codechanges (fileID, diff) VALUES (%s, %s)",
+        (file_id, diff)
+    )
+    cursor.connection.commit()

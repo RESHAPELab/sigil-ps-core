@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS codefiles (
     currentContent TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (userID) REFERENCES users(userID)
+    FOREIGN KEY (userID) REFERENCES users(userID),
+    UNIQUE KEY unique_user_filename (userID, filename)
 );
 
 CREATE TABLE IF NOT EXISTS codechanges (

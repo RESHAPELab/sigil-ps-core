@@ -38,3 +38,22 @@ CREATE TABLE IF NOT EXISTS personas (
     description TEXT,
     prompt TEXT
 );
+
+CREATE TABLE IF NOT EXISTS codefiles (
+    uid INT AUTO_INCREMENT PRIMARY KEY,
+    userID INT,
+    filename VARCHAR(255) UNIQUE,
+    initialContent TEXT,
+    currentContent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (userID) REFERENCES users(userID)
+);
+
+CREATE TABLE IF NOT EXISTS codechanges (
+    uid INT AUTO_INCREMENT PRIMARY KEY,
+    fileID INT NOT NULL,
+    diff TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (fileID) REFERENCES codefiles(uid)
+);

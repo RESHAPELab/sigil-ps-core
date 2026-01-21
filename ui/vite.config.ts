@@ -5,4 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: "/",
   plugins: [react()],
+  build: {
+    outDir: '../../sigil-ps-vscode/media',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: './index.html'
+      }
+    }
+  }
 })

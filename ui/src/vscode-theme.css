@@ -1,0 +1,67 @@
+:root {
+  /* Map app colors to VS Code theme vars (available in webviews) */
+  --sigil-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --sigil-fg: var(--vscode-foreground);
+  --sigil-border: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  --sigil-muted: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  --sigil-input-bg: var(--vscode-input-background);
+  --sigil-input-fg: var(--vscode-input-foreground);
+  --sigil-input-border: var(--vscode-input-border, var(--sigil-border));
+  --sigil-button-bg: var(--vscode-button-background);
+  --sigil-button-fg: var(--vscode-button-foreground);
+  --sigil-button-hover: var(--vscode-button-hoverBackground);
+  --sigil-badge-bg: var(--vscode-badge-background);
+  --sigil-badge-fg: var(--vscode-badge-foreground);
+  --sigil-error-bg: var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.08));
+  --sigil-error-fg: var(--vscode-errorForeground, #f14c4c);
+  --sigil-focus-border: var(--vscode-focusBorder, rgba(139, 124, 196, 0.6));
+}
+
+.sigil-root {
+  height: 100vh;
+  width: 100vw;
+  background: var(--sigil-bg);
+  color: var(--sigil-fg);
+}
+
+.sigil-border {
+  border-color: var(--sigil-border) !important;
+}
+
+.sigil-muted {
+  color: var(--sigil-muted) !important;
+}
+
+.sigil-input {
+  background: var(--sigil-input-bg) !important;
+  color: var(--sigil-input-fg) !important;
+  border-color: var(--sigil-input-border) !important;
+}
+
+.sigil-button {
+  background: var(--sigil-button-bg) !important;
+  color: var(--sigil-button-fg) !important;
+}
+.sigil-button:hover {
+  background: var(--sigil-button-hover) !important;
+}
+
+/* VS Code–style attachment button: light grey rounded, purple glow on focus */
+.sigil-attach-btn {
+  background: var(--sigil-input-bg) !important;
+  border: 1px solid var(--sigil-input-border) !important;
+  color: var(--sigil-muted) !important;
+}
+.sigil-attach-btn:hover {
+  color: var(--sigil-fg) !important;
+}
+.sigil-attach-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--sigil-focus-border);
+}
+.sigil-attach-tag {
+  background: var(--sigil-input-bg) !important;
+  border: 1px solid var(--sigil-input-border) !important;
+  color: var(--sigil-fg) !important;
+}
+

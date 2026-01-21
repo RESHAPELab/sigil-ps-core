@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { vscodeApi, setupMessageListener, VSCodeMessage } from '../utils/vscodeApi';
 
 export interface ChatMessage {
@@ -29,6 +29,10 @@ export function useChat() {
     const [authState, setAuthState] = useState<AuthState>({ authenticated: false });
     const [fileContext, setFileContext] = useState<FileContext | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [feedbackState, setFeedbackState] = useState<Map<string, { rating: 'good' | 'bad', submitted: boolean }>>(new Map());
+    const [pendingFeedback, setPendingFeedback] = useState<Map<string, 'good' | 'bad'>>(new Map());
+    // Use a ref so the webview message listener (registered once) can read the latest pending feedback.
+    const pendingFeedbackRef = useRef<Map<string, 'good' | 'bad'>>(new Map());
 
     useEffect(() => {
         // Request authentication status on mount
@@ -73,6 +77,31 @@ export function useChat() {
                 
                 case 'historyCleared':
                     setMessages([]);
+                    setFeedbackState(new Map());
+                    setPendingFeedback(new Map());
+                    pendingFeedbackRef.current = new Map();
+                    break;
+                
+                case 'feedbackSubmitted':
+                    if (message.messageId) {
+                        if (message.success) {
+                            const rating = pendingFeedbackRef.current.get(message.messageId);
+                            if (rating) {
+                                setFeedbackState(prev => {
+                                    const newState = new Map(prev);
+                                    newState.set(message.messageId, { rating, submitted: true });
+                                    return newState;
+                                });
+                            }
+                        }
+                        // Clear pending feedback regardless of success/failure
+                        pendingFeedbackRef.current.delete(message.messageId);
+                        setPendingFeedback(prev => {
+                            const newState = new Map(prev);
+                            newState.delete(message.messageId);
+                            return newState;
+                        });
+                    }
                     break;
             }
         };
@@ -101,6 +130,15 @@ export function useChat() {
     }, []);
 
     const submitFeedback = useCallback((messageId: string, rating: 'good' | 'bad', reason: string) => {
+        // Update ref immediately (no stale-closure issues in the message listener).
+        pendingFeedbackRef.current.set(messageId, rating);
+        // Mark feedback as pending
+        setPendingFeedback(prev => {
+            const newState = new Map(prev);
+            newState.set(messageId, rating);
+            return newState;
+        });
+        
         vscodeApi.postMessage({
             command: 'submitFeedback',
             data: {
@@ -111,13 +149,18 @@ export function useChat() {
         });
     }, []);
 
-    const clearHistory = useCallback(() => {
-        vscodeApi.postMessage({ command: 'clearHistory' });
-    }, []);
 
     const requestAuth = useCallback(() => {
         vscodeApi.postMessage({ command: 'requestAuth' });
     }, []);
+
+    const getFeedbackStatus = useCallback((messageId: string) => {
+        return feedbackState.get(messageId) || null;
+    }, [feedbackState]);
+
+    const getPendingFeedback = useCallback((messageId: string) => {
+        return pendingFeedback.has(messageId);
+    }, [pendingFeedback]);
 
     return {
         messages,
@@ -128,7 +171,8 @@ export function useChat() {
         sendMessage,
         requestFileContext,
         submitFeedback,
-        clearHistory,
-        requestAuth
+        requestAuth,
+        getFeedbackStatus,
+        getPendingFeedback
     };
 }

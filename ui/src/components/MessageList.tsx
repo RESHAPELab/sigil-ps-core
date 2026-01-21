@@ -4,9 +4,11 @@ import { FeedbackButton } from './FeedbackButton';
 interface MessageListProps {
     messages: ChatMessage[];
     onFeedback: (messageId: string, rating: 'good' | 'bad', reason: string) => void;
+    getFeedbackStatus: (messageId: string) => { rating: 'good' | 'bad', submitted: boolean } | null;
+    getPendingFeedback: (messageId: string) => boolean;
 }
 
-export function MessageList({ messages, onFeedback }: MessageListProps) {
+export function MessageList({ messages, onFeedback, getFeedbackStatus, getPendingFeedback }: MessageListProps) {
     if (messages.length === 0) {
         return (
             <div className="flex items-center justify-center h-full sigil-muted">
@@ -41,14 +43,22 @@ export function MessageList({ messages, onFeedback }: MessageListProps) {
                                 <p>{message.content}</p>
                             )}
                         </div>
-                        {message.role === 'assistant' && (
-                            <div className="mt-2">
-                                <FeedbackButton
-                                    messageId={message.id}
-                                    onFeedback={onFeedback}
-                                />
-                            </div>
-                        )}
+                        {message.role === 'assistant' && (() => {
+                            const feedbackStatus = getFeedbackStatus(message.id);
+                            const isPending = getPendingFeedback(message.id);
+                            console.log('MessageList render - messageId:', message.id, 'feedbackStatus:', feedbackStatus, 'isPending:', isPending);
+                            return (
+                                <div className="mt-2">
+                                    <FeedbackButton
+                                        messageId={message.id}
+                                        onFeedback={onFeedback}
+                                        feedbackSubmitted={feedbackStatus?.submitted || false}
+                                        feedbackRating={feedbackStatus?.rating}
+                                        isSubmitting={isPending}
+                                    />
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             ))}

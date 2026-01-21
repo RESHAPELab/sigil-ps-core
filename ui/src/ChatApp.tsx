@@ -14,8 +14,9 @@ export function ChatApp() {
         sendMessage,
         requestFileContext,
         submitFeedback,
-        clearHistory,
-        requestAuth
+        requestAuth,
+        getFeedbackStatus,
+        getPendingFeedback
     } = useChat();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,7 +49,7 @@ export function ChatApp() {
     return (
         <div className="sigil-root flex flex-col h-full">
             {/* Header */}
-            <div className="sigil-border border-b p-4 flex items-center justify-between">
+            <div className="sigil-border border-b p-4">
                 <div>
                     <h1 className="text-lg font-semibold">Sigil Chat</h1>
                     {authState.user && (
@@ -57,12 +58,6 @@ export function ChatApp() {
                         </p>
                     )}
                 </div>
-                <button
-                    onClick={clearHistory}
-                    className="text-xs px-3 py-1 border rounded sigil-border"
-                >
-                    Clear
-                </button>
             </div>
 
             {/* File Context */}
@@ -83,6 +78,8 @@ export function ChatApp() {
                 <MessageList
                     messages={messages}
                     onFeedback={submitFeedback}
+                    getFeedbackStatus={getFeedbackStatus}
+                    getPendingFeedback={getPendingFeedback}
                 />
                 {loading && (
                     <div className="p-4 text-center sigil-muted">

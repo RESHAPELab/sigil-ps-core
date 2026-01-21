@@ -15,6 +15,11 @@ export interface FileContext {
     isSelection: boolean;
 }
 
+export interface Attachment {
+    fileName: string;
+    content: string;
+}
+
 export interface AuthState {
     authenticated: boolean;
     user?: {
@@ -112,7 +117,7 @@ export function useChat() {
         vscodeApi.postMessage({ command: 'ready' });
     }, []);
 
-    const sendMessage = useCallback((message: string, includeFileContext: boolean = false) => {
+    const sendMessage = useCallback((message: string, _includeFileContext: boolean = true, attachments: Attachment[] = []) => {
         if (!message.trim()) return;
         
         setError(null);
@@ -120,7 +125,8 @@ export function useChat() {
             command: 'sendMessage',
             data: {
                 message: message.trim(),
-                includeFileContext
+                includeFileContext: true,
+                attachments
             }
         });
     }, []);

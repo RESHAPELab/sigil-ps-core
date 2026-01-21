@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { useChat } from './hooks/useChat';
 import { MessageList } from './components/MessageList';
 import { MessageInput } from './components/MessageInput';
-import { FileContext } from './components/FileContext';
 
 export function ChatApp() {
     const {
@@ -12,7 +11,6 @@ export function ChatApp() {
         fileContext,
         error,
         sendMessage,
-        requestFileContext,
         submitFeedback,
         requestAuth,
         getFeedbackStatus,
@@ -60,12 +58,6 @@ export function ChatApp() {
                 </div>
             </div>
 
-            {/* File Context */}
-            <FileContext
-                fileContext={fileContext}
-                onRequestContext={requestFileContext}
-            />
-
             {/* Error Display */}
             {error && (
                 <div className="border-b p-3 sigil-border" style={{ background: 'var(--sigil-error-bg)' }}>
@@ -94,8 +86,9 @@ export function ChatApp() {
 
             {/* Input */}
             <MessageInput
-                onSend={(msg, includeFileContents) => sendMessage(msg, includeFileContents)}
+                onSend={(msg, attachments) => sendMessage(msg, true, attachments)}
                 disabled={loading}
+                fileContext={fileContext}
             />
         </div>
     );

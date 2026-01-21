@@ -1,6 +1,14 @@
 import { useState, KeyboardEvent, useRef } from 'react';
 import { FileContext } from '../hooks/useChat';
 
+function PaperclipIcon() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+        </svg>
+    );
+}
+
 interface Attachment {
     fileName: string;
     content: string;
@@ -65,7 +73,42 @@ export function MessageInput({ onSend, disabled = false, placeholder = "Type you
                     </div>
                 </div>
             )}
-            <div className="flex gap-2 items-start">
+            <div className="flex gap-2 items-center flex-wrap">
+                <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={disabled}
+                    className="sigil-attach-btn shrink-0 w-9 h-9 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors border"
+                    title="Attach file"
+                    aria-label="Attach file"
+                >
+                    <PaperclipIcon />
+                </button>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(e.target.files)}
+                />
+                {attachments.length > 0 && (
+                    <div className="flex gap-1.5 flex-shrink-0 overflow-x-auto max-w-[50%] min-w-0">
+                        {attachments.map(att => (
+                            <span key={att.fileName} className="sigil-attach-tag inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs border flex-shrink-0">
+                                {att.fileName}
+                                <button
+                                    type="button"
+                                    onClick={() => removeAttachment(att.fileName)}
+                                    className="text-red-500 hover:underline disabled:opacity-50"
+                                    disabled={disabled}
+                                    aria-label={`Remove ${att.fileName}`}
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
                 <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -73,51 +116,17 @@ export function MessageInput({ onSend, disabled = false, placeholder = "Type you
                     placeholder={placeholder}
                     disabled={disabled}
                     rows={1}
-                    className="flex-1 resize-none rounded-lg border px-3 py-2 focus:outline-none disabled:opacity-50 sigil-input"
+                    className="flex-1 min-w-[140px] resize-none rounded-lg border px-3 py-2 focus:outline-none disabled:opacity-50 sigil-input"
                     style={{ minHeight: '40px', maxHeight: '120px' }}
                 />
-                <div className="flex flex-col gap-1">
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={disabled}
-                        className="px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors sigil-border text-xs flex items-center justify-center"
-                        title="Attach file"
-                    >
-                        📎
-                    </button>
-                    <button
-                        onClick={handleSend}
-                        disabled={disabled || !message.trim()}
-                        className="px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors sigil-button"
-                    >
-                        Send
-                    </button>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => handleFileSelect(e.target.files)}
-                    />
-                </div>
+                <button
+                    onClick={handleSend}
+                    disabled={disabled || !message.trim()}
+                    className="px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors sigil-button shrink-0"
+                >
+                    Send
+                </button>
             </div>
-            {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 text-xs">
-                    {attachments.map(att => (
-                        <span key={att.fileName} className="px-2 py-1 rounded sigil-border flex items-center gap-2">
-                            {att.fileName}
-                            <button
-                                onClick={() => removeAttachment(att.fileName)}
-                                className="text-red-500 hover:underline"
-                                disabled={disabled}
-                            >
-                                ✕
-                            </button>
-                        </span>
-                    ))}
-                </div>
-            )}
             <p className="text-xs sigil-muted">Press Enter to send, Shift+Enter for new line</p>
         </div>
     );

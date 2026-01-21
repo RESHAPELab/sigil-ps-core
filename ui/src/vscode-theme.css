@@ -14,6 +14,7 @@
   --sigil-badge-fg: var(--vscode-badge-foreground);
   --sigil-error-bg: var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.08));
   --sigil-error-fg: var(--vscode-errorForeground, #f14c4c);
+  --sigil-focus-border: var(--vscode-focusBorder, rgba(139, 124, 196, 0.6));
 }
 
 .sigil-root {
@@ -43,5 +44,24 @@
 }
 .sigil-button:hover {
   background: var(--sigil-button-hover) !important;
+}
+
+/* VS Code–style attachment button: light grey rounded, purple glow on focus */
+.sigil-attach-btn {
+  background: var(--sigil-input-bg) !important;
+  border: 1px solid var(--sigil-input-border) !important;
+  color: var(--sigil-muted) !important;
+}
+.sigil-attach-btn:hover {
+  color: var(--sigil-fg) !important;
+}
+.sigil-attach-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--sigil-focus-border);
+}
+.sigil-attach-tag {
+  background: var(--sigil-input-bg) !important;
+  border: 1px solid var(--sigil-input-border) !important;
+  color: var(--sigil-fg) !important;
 }
 

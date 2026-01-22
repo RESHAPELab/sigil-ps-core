@@ -43,6 +43,19 @@ export function MessageList({ messages, onFeedback, getFeedbackStatus, getPendin
                                 <p>{message.content}</p>
                             )}
                         </div>
+                        {/* Display attachments for user messages */}
+                        {message.role === 'user' && message.attachments && message.attachments.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-opacity-20">
+                                <div className="text-xs font-medium mb-1 opacity-75">Attached files:</div>
+                                <div className="flex gap-1.5 flex-wrap">
+                                    {message.attachments.map((att, idx) => (
+                                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border opacity-75">
+                                            {att.fileName}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {message.role === 'assistant' && (() => {
                             const feedbackStatus = getFeedbackStatus(message.id);
                             const isPending = getPendingFeedback(message.id);

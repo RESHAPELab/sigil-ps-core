@@ -1,5 +1,6 @@
-import { useState, KeyboardEvent, useRef } from 'react';
-import { FileContext } from '../hooks/useChat';
+import { useState, KeyboardEvent, useEffect, useRef } from 'react';
+import { FileContext, Attachment } from '../hooks/useChat';
+import { vscodeApi, setupMessageListener, VSCodeMessage } from '../utils/vscodeApi';
 
 function PaperclipIcon() {
     return (
@@ -9,53 +10,111 @@ function PaperclipIcon() {
     );
 }
 
-interface Attachment {
-    fileName: string;
-    content: string;
-}
-
 interface MessageInputProps {
     onSend: (message: string, attachments: Attachment[]) => void;
     disabled?: boolean;
     placeholder?: string;
     fileContext?: FileContext | null;
+    attachments: Attachment[];
+    pickFiles: () => void;
+    removeAttachment: (fileName: string) => void;
 }
 
-export function MessageInput({ onSend, disabled = false, placeholder = "Type your message...", fileContext }: MessageInputProps) {
+export function MessageInput({ onSend, disabled = false, placeholder = "Type your message...", fileContext, attachments, pickFiles, removeAttachment }: MessageInputProps) {
     const [message, setMessage] = useState('');
-    const [attachments, setAttachments] = useState<Attachment[]>([]);
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [contextPickerActive, setContextPickerActive] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const hashPositionRef = useRef<number>(-1);
+
+    useEffect(() => {
+        const handleMessage = (msg: VSCodeMessage) => {
+            if (msg.command === 'contextPickerResult') {
+                setContextPickerActive(false);
+                
+                if (msg.result && textareaRef.current) {
+                    // Insert the reference into the input at the hash position
+                    const textarea = textareaRef.current;
+                    const currentValue = textarea.value;
+                    const cursorPos = textarea.selectionStart;
+                    
+                    // Find the hash position
+                    if (hashPositionRef.current >= 0) {
+                        const beforeHash = currentValue.substring(0, hashPositionRef.current);
+                        const afterCursor = currentValue.substring(cursorPos);
+                        const reference = msg.result.reference || `#${msg.result.file || msg.result.name}`;
+                        
+                        const newValue = beforeHash + reference + ' ' + afterCursor;
+                        setMessage(newValue);
+                        
+                        // Set cursor position after the inserted reference
+                        setTimeout(() => {
+                            const newCursorPos = hashPositionRef.current + reference.length + 1;
+                            textarea.setSelectionRange(newCursorPos, newCursorPos);
+                        }, 0);
+                    }
+                    
+                    hashPositionRef.current = -1;
+                }
+            }
+        };
+        setupMessageListener(handleMessage);
+    }, []);
 
     const handleSend = () => {
         if (message.trim() && !disabled) {
             onSend(message, attachments);
             setMessage('');
-            setAttachments([]);
+            // Don't clear attachments - they should persist for visibility
         }
     };
 
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !contextPickerActive) {
             e.preventDefault();
             handleSend();
         }
     };
 
-    const handleFileSelect = async (files: FileList | null) => {
-        if (!files) return;
-        const newAttachments: Attachment[] = [];
-        for (const file of Array.from(files)) {
-            if (file.size > 1024 * 1024) continue;
-            const text = await file.text();
-            newAttachments.push({ fileName: file.name, content: text });
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const value = e.target.value;
+        const cursorPos = e.target.selectionStart;
+        
+        // Check if "#" was just typed
+        if (value.length > 0 && cursorPos > 0 && value[cursorPos - 1] === '#') {
+            // Store the hash position
+            hashPositionRef.current = cursorPos - 1;
+            
+            // Extract query after "#" (if any)
+            const textAfterHash = value.substring(cursorPos);
+            const spaceIndex = textAfterHash.indexOf(' ');
+            const query = spaceIndex > 0 ? textAfterHash.substring(0, spaceIndex) : '';
+            
+            // Trigger context picker
+            setContextPickerActive(true);
+            vscodeApi.postMessage({
+                command: 'openContextPicker',
+                query: query
+            });
+        } else if (contextPickerActive && value.length > 0) {
+            // Update query as user types after "#"
+            const hashIndex = value.lastIndexOf('#', cursorPos - 1);
+            if (hashIndex >= 0) {
+                const textAfterHash = value.substring(hashIndex + 1, cursorPos);
+                const spaceIndex = textAfterHash.indexOf(' ');
+                const query = spaceIndex > 0 ? textAfterHash.substring(0, spaceIndex) : textAfterHash;
+                
+                // Update context picker query
+                vscodeApi.postMessage({
+                    command: 'openContextPicker',
+                    query: query
+                });
+            }
+        } else {
+            setContextPickerActive(false);
+            hashPositionRef.current = -1;
         }
-        if (newAttachments.length) {
-            setAttachments(prev => [...prev, ...newAttachments]);
-        }
-    };
-
-    const removeAttachment = (name: string) => {
-        setAttachments(prev => prev.filter(a => a.fileName !== name));
+        
+        setMessage(value);
     };
 
     return (
@@ -73,10 +132,35 @@ export function MessageInput({ onSend, disabled = false, placeholder = "Type you
                     </div>
                 </div>
             )}
+            {/* Attachments display above input area */}
+            {attachments.length > 0 && (
+                <div className="flex gap-1.5 flex-wrap">
+                    {attachments.map(att => (
+                        <span key={att.fileName} className="sigil-attach-tag inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs border flex-shrink-0">
+                            {att.fileName}
+                            <button
+                                type="button"
+                                onClick={() => removeAttachment(att.fileName)}
+                                className="text-red-500 hover:underline disabled:opacity-50"
+                                disabled={disabled}
+                                aria-label={`Remove ${att.fileName}`}
+                            >
+                                ✕
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
             <div className="flex gap-2 items-center flex-wrap">
                 <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (pickFiles) {
+                            pickFiles();
+                        }
+                    }}
                     disabled={disabled}
                     className="sigil-attach-btn shrink-0 w-9 h-9 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors border"
                     title="Attach file"
@@ -84,41 +168,20 @@ export function MessageInput({ onSend, disabled = false, placeholder = "Type you
                 >
                     <PaperclipIcon />
                 </button>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleFileSelect(e.target.files)}
-                />
-                {attachments.length > 0 && (
-                    <div className="flex gap-1.5 flex-shrink-0 overflow-x-auto max-w-[50%] min-w-0">
-                        {attachments.map(att => (
-                            <span key={att.fileName} className="sigil-attach-tag inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs border flex-shrink-0">
-                                {att.fileName}
-                                <button
-                                    type="button"
-                                    onClick={() => removeAttachment(att.fileName)}
-                                    className="text-red-500 hover:underline disabled:opacity-50"
-                                    disabled={disabled}
-                                    aria-label={`Remove ${att.fileName}`}
-                                >
-                                    ✕
-                                </button>
-                            </span>
-                        ))}
-                    </div>
-                )}
                 <textarea
+                    ref={textareaRef}
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    placeholder={placeholder}
+                    placeholder={contextPickerActive ? "Type to search workspace files and symbols..." : placeholder}
                     disabled={disabled}
                     rows={1}
                     className="flex-1 min-w-[140px] resize-none rounded-lg border px-3 py-2 focus:outline-none disabled:opacity-50 sigil-input"
                     style={{ minHeight: '40px', maxHeight: '120px' }}
                 />
+                {contextPickerActive && (
+                    <span className="text-xs sigil-muted px-2">Searching workspace...</span>
+                )}
                 <button
                     onClick={handleSend}
                     disabled={disabled || !message.trim()}

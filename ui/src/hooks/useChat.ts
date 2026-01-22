@@ -7,6 +7,7 @@ export interface ChatMessage {
     content: string;
     timestamp: number;
     conversationId?: string;
+    attachments?: Attachment[];
 }
 
 export interface FileContext {
@@ -36,6 +37,7 @@ export function useChat() {
     const [error, setError] = useState<string | null>(null);
     const [feedbackState, setFeedbackState] = useState<Map<string, { rating: 'good' | 'bad', submitted: boolean }>>(new Map());
     const [pendingFeedback, setPendingFeedback] = useState<Map<string, 'good' | 'bad'>>(new Map());
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
     // Use a ref so the webview message listener (registered once) can read the latest pending feedback.
     const pendingFeedbackRef = useRef<Map<string, 'good' | 'bad'>>(new Map());
 
@@ -108,6 +110,53 @@ export function useChat() {
                         });
                     }
                     break;
+                
+                case 'filesPicked':
+                    if (message.files && Array.isArray(message.files)) {
+                        setAttachments(prev => {
+                            // Add new files, avoiding duplicates by fileName
+                            const existingNames = new Set(prev.map(a => a.fileName));
+                            const newFiles = message.files.filter((f: Attachment) => !existingNames.has(f.fileName));
+                            return [...prev, ...newFiles];
+                        });
+                    }
+                    break;
+                
+                case 'contextPickerResult':
+                    if (message.result) {
+                        // Add context to attachments
+                        if (message.result.type === 'file') {
+                            setAttachments(prev => {
+                                const existingNames = new Set(prev.map(a => a.fileName));
+                                if (!existingNames.has(message.result.file)) {
+                                    return [...prev, {
+                                        fileName: message.result.file,
+                                        content: message.result.content
+                                    }];
+                                }
+                                return prev;
+                            });
+                        } else if (message.result.type === 'symbol') {
+                            // For symbols, add as a file reference with context
+                            setAttachments(prev => {
+                                const fileName = `${message.result.file}:${message.result.line}`;
+                                const existingNames = new Set(prev.map(a => a.fileName));
+                                if (!existingNames.has(fileName)) {
+                                    return [...prev, {
+                                        fileName: fileName,
+                                        content: `Symbol: ${message.result.name}\nFile: ${message.result.file}\nLine: ${message.result.line}\n\nContext:\n${message.result.context}`
+                                    }];
+                                }
+                                return prev;
+                            });
+                        }
+                        // Notify that context was added (for UI feedback)
+                        vscodeApi.postMessage({
+                            command: 'contextAdded',
+                            reference: message.result.reference
+                        });
+                    }
+                    break;
             }
         };
 
@@ -117,7 +166,7 @@ export function useChat() {
         vscodeApi.postMessage({ command: 'ready' });
     }, []);
 
-    const sendMessage = useCallback((message: string, _includeFileContext: boolean = true, attachments: Attachment[] = []) => {
+    const sendMessage = useCallback((message: string, _includeFileContext: boolean = true, attachmentsToSend: Attachment[] = []) => {
         if (!message.trim()) return;
         
         setError(null);
@@ -126,9 +175,18 @@ export function useChat() {
             data: {
                 message: message.trim(),
                 includeFileContext: true,
-                attachments
+                attachments: attachmentsToSend
             }
         });
+        // Don't clear attachments - they should persist for visibility
+    }, []);
+
+    const pickFiles = useCallback(() => {
+        vscodeApi.postMessage({ command: 'pickFiles' });
+    }, []);
+
+    const removeAttachment = useCallback((fileName: string) => {
+        setAttachments(prev => prev.filter(a => a.fileName !== fileName));
     }, []);
 
     const requestFileContext = useCallback(() => {
@@ -179,6 +237,9 @@ export function useChat() {
         submitFeedback,
         requestAuth,
         getFeedbackStatus,
-        getPendingFeedback
+        getPendingFeedback,
+        attachments,
+        pickFiles,
+        removeAttachment
     };
 }

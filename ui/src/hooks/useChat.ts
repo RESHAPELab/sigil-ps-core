@@ -20,18 +20,9 @@ export interface Attachment {
     content: string;
 }
 
-export interface AuthState {
-    authenticated: boolean;
-    user?: {
-        login: string;
-        name: string;
-    };
-}
-
 export function useChat() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading, setLoading] = useState(false);
-    const [authState, setAuthState] = useState<AuthState>({ authenticated: false });
     const [fileContext, setFileContext] = useState<FileContext | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [feedbackState, setFeedbackState] = useState<Map<string, { rating: 'good' | 'bad', submitted: boolean }>>(new Map());
@@ -40,22 +31,18 @@ export function useChat() {
     const pendingFeedbackRef = useRef<Map<string, 'good' | 'bad'>>(new Map());
 
     useEffect(() => {
-        // Request authentication status on mount
-        vscodeApi.postMessage({ command: 'requestAuth' });
-        
+        // Restore local webview state first (persists across hide/show)
+        const savedState = vscodeApi.getState();
+        if (savedState?.messages) {
+            setMessages(savedState.messages as ChatMessage[]);
+        }
+
         // Request file context
         vscodeApi.postMessage({ command: 'getFileContext' });
 
         // Set up message listener
         const handleMessage = (message: VSCodeMessage) => {
             switch (message.command) {
-                case 'authStatus':
-                    setAuthState({
-                        authenticated: message.authenticated,
-                        user: message.user
-                    });
-                    break;
-                
                 case 'messageAdded':
                     setMessages(prev => [...prev, message.message]);
                     setError(null);
@@ -117,6 +104,12 @@ export function useChat() {
         vscodeApi.postMessage({ command: 'ready' });
     }, []);
 
+    // Persist messages into VS Code webview state so they survive
+    // panel hide/show and reloads within the same session.
+    useEffect(() => {
+        vscodeApi.setState({ messages });
+    }, [messages]);
+
     const sendMessage = useCallback((message: string, _includeFileContext: boolean = true, attachments: Attachment[] = []) => {
         if (!message.trim()) return;
         
@@ -155,11 +148,6 @@ export function useChat() {
         });
     }, []);
 
-
-    const requestAuth = useCallback(() => {
-        vscodeApi.postMessage({ command: 'requestAuth' });
-    }, []);
-
     const getFeedbackStatus = useCallback((messageId: string) => {
         return feedbackState.get(messageId) || null;
     }, [feedbackState]);
@@ -171,13 +159,11 @@ export function useChat() {
     return {
         messages,
         loading,
-        authState,
         fileContext,
         error,
         sendMessage,
         requestFileContext,
         submitFeedback,
-        requestAuth,
         getFeedbackStatus,
         getPendingFeedback
     };

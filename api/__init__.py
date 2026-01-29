@@ -12,36 +12,33 @@ from .routes.personas import personas_bp
 from .routes.users import users_bp
 from .extensions import mysql
 
+
 def create_app():
     static_dir = os.path.join(os.path.dirname(__file__), "../ui/dist")
-    app = Flask(__name__, static_folder=static_dir, static_url_path='')
+    app = Flask(__name__, static_folder=static_dir, static_url_path="")
 
     litellm.cache = None
 
     # Configure the app
-    app.config['MYSQL_HOST'] = Config.HOST
-    app.config['MYSQL_USER'] = Config.USER
-    app.config['MYSQL_PASSWORD'] = Config.PASSWORD
-    app.config['MYSQL_DB'] = Config.DATABASE
-    app.config['MYSQL_CHARSET'] = Config.CHARSET
-    app.config['MYSQL_USE_UNICODE'] = Config.UNICODE
-    #this is a test
+    app.config["MYSQL_HOST"] = Config.HOST
+    app.config["MYSQL_USER"] = Config.USER
+    app.config["MYSQL_PASSWORD"] = Config.PASSWORD
+    app.config["MYSQL_DB"] = Config.DATABASE
+    app.config["MYSQL_CHARSET"] = Config.CHARSET
+    app.config["MYSQL_USE_UNICODE"] = Config.UNICODE
+
     # SSL config (only if set, which would only not be set in development)
     if Config.SSL_CA:
-        app.config['MYSQL_CUSTOM_OPTIONS'] = {
-            'ssl': {
-                'ca': Config.SSL_CA
-            },
-            'ssl_mode': 'VERIFY_CA'
+        app.config["MYSQL_CUSTOM_OPTIONS"] = {
+            "ssl": {"ca": Config.SSL_CA},
+            "ssl_mode": "VERIFY_CA",
         }
 
     # Set up logging for the app
     logging.basicConfig(
         level=logging.INFO,
-        format='[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s',  # Log format
-        handlers=[
-            logging.StreamHandler()
-        ]
+        format="[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s",  # Log format
+        handlers=[logging.StreamHandler()],
     )
 
     app.logger = logging.getLogger(__name__)
@@ -62,11 +59,11 @@ def create_app():
     app.logger.info("CORS initialized.")
 
     # Register blueprints
-    app.register_blueprint(prompt_bp, url_prefix='/api')
-    app.register_blueprint(feedback_bp, url_prefix='/api')
-    app.register_blueprint(personalization_bp, url_prefix='/api')
-    app.register_blueprint(personas_bp, url_prefix='/api')
-    app.register_blueprint(users_bp, url_prefix='/api')
+    app.register_blueprint(prompt_bp, url_prefix="/api")
+    app.register_blueprint(feedback_bp, url_prefix="/api")
+    app.register_blueprint(personalization_bp, url_prefix="/api")
+    app.register_blueprint(personas_bp, url_prefix="/api")
+    app.register_blueprint(users_bp, url_prefix="/api")
 
     # Log request info
     @app.before_request
@@ -82,13 +79,13 @@ def create_app():
                 current_app.logger.info(f"JSON Body:\n{pretty_body}")
 
     # Serve React static files
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
     def serve_react(path):
         if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
             return send_from_directory(app.static_folder, path)
         else:
             # Serve index.html for React Router
-            return send_from_directory(app.static_folder, 'index.html')
+            return send_from_directory(app.static_folder, "index.html")
 
     return app

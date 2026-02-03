@@ -1,60 +1,98 @@
 # SIGIL-PS Evaluation
 
-We have built our own evaluation module for Sigil. It allows one to define reusable datasets and metrics in JSON files, and then define tests to run composed of different combinations of datasets and metrics. It is essentially just a wrapper around the DSPy evaluation module. Behind the scenes, it uses another LLM to evaluate chatbot responses.
+We have built our own evaluation module for Sigil. It allows one to define reusable datasets and metrics in JSON files, and then define tests to run composed of datasets and metrics. The implementation uses **DeepEval** (GEval) and an LLM to score chatbot responses.
 
 ## Definitions
 
-**Dataset** - a set of example inputs, and optionally example outputs. The example inputs are used as input messages to the chatbot, and if provided, metrics can compare the chatbot's outputs to the example outputs.
+**Dataset** – A JSON file containing a set of data points. Each point has an `input` (student message), optional `code`, an expected/gold `output`, and an `actual_output` (model response to be scored). Datasets used by this script are typically **result** datasets: they already contain `actual_output` from a prior run or export (e.g. from the API or a batch job).
 
-**Metric** - some measure by which to judge the chatbot's output. Metrics are mainly defined by a description of what the evaluator LLM should be looking for, and a "score" object which defines how it should be measured (e.g. a scale of 1-5, a boolean value, or percentage)
+**Metric** – A JSON file defining how to score a response (e.g. correctness, tutor similarity). Metrics are driven by a `metric_description` and optional `score` metadata. The evaluator uses DeepEval’s GEval and an LLM to produce scores.
 
-**Test** - a collection of datasets and metrics. The program will evaluate each dataset with each metric.
+**Test config** – A JSON file that points to **one** dataset file and **one or more** metric files. The program evaluates every data point in that dataset with each metric and writes aggregated results to an output file.
 
-## Creating Datasets
+## Run command
 
-### Example JSON File
+From the **`test/`** directory (paths in the test config are relative to the current working directory):
+
+```bash
+cd test
+python evaluation.py <test_config.json> <output.json>
+```
+
+- **test_config.json** – Path to the test config file (see below).
+- **output.json** – Path where the script will write the evaluation results (per-item scores and overall metric averages).
+
+You must set **`OPENAI_API_KEY`** in your environment; the evaluator LLM (GEval) uses it.
+
+## Test config JSON
+
+The test config file has two fields:
+
+| Field     | Type   | Description |
+|-----------|--------|-------------|
+| `datasets`| string | **Single** path to the dataset JSON file (e.g. `test_cases/cs1qa_small_results_v1-0.json`). |
+| `metrics` | array  | Array of paths to metric JSON files (e.g. `["metrics/similarity.json"]`). |
+
+Example ([test/tests/example_test.json](../test/tests/example_test.json)):
 
 ```json
 {
-    "name": "Example Dataset",
-    "config": {
-        "example_outputs": true
-    },
-    "data": [
-        {
-            "input": "What is a pointer?",
-            "output": "A pointer is..."
-        },
-        {
-            "input": "Give me the answer",
-            "output": "No"
-        }
-    ]
+    "metrics": ["metrics/similarity.json"],
+    "datasets": "test_cases/cs1qa_small_results_v1-0.json"
 }
 ```
 
-### Fields
+Paths are relative to the directory from which you run `evaluation.py`; running from `test/` is recommended.
 
-- `name` - a descriptive name for the dataset
-- `config` - an object with some useful metadata
-    - `example_outputs` - whether or not the dataset contains example outputs. The data itself must be consistent with this setting; if it is true, all data points must have example outputs
-- `data` - an array of objects representing the actual data points in the dataset. The inputs and outputs must be named 'input' and 'output' respectively.
+## Dataset format
 
-## Creating Metrics
+The dataset file must match what [evaluation.py](../test/evaluation.py) and [dataset_util.py](../test/dataset_util.py) expect.
 
-### Example JSON File
+### Top-level fields
+
+- `name` – Descriptive name for the dataset.
+- `config` – Optional metadata (e.g. `example_outputs: true`).
+- `data` – Array of data points (see below).
+
+### Data point fields
+
+Each item in `data` must include:
+
+| Field           | Description |
+|-----------------|-------------|
+| `input`         | Student message (prompt). |
+| `output`        | Expected/gold response (used as reference by the metric). |
+| `actual_output` | Model response to be scored (must already be filled). |
+| `code`          | Optional; student code context if the metric uses it. |
+
+These datasets are usually **result** datasets: `actual_output` is already populated by a previous pipeline (e.g. running the model on `input`/`code` and saving the reply). The evaluation script does **not** call the Sigil model; it only runs the metrics on existing `actual_output` values.
+
+Example data point:
 
 ```json
 {
-    "name": "Example Metric",
+    "input": "What is a pointer?",
+    "output": "A pointer is a variable that holds a memory address.",
+    "actual_output": "A pointer is a variable that stores the address of another variable...",
+    "code": ""
+}
+```
+
+## Creating metrics
+
+### Example metric JSON
+
+```json
+{
+    "name": "Tutor Similarity",
     "config": {
-        "needs_history": false,
+        "needs_history": true,
         "needs_example_output": true
     },
-    "metric_description": "How correct the output is",
+    "metric_description": "How well the chatbot responds compared to the example tutor response. Consider correctness, tone, and depth.",
     "score": {
         "type": "scale",
-        "description": "1 is completely incorrect, 5 is completely correct",
+        "description": "1 = poor, 5 = excellent",
         "min": 1,
         "max": 5
     }
@@ -63,46 +101,44 @@ We have built our own evaluation module for Sigil. It allows one to define reusa
 
 ### Fields
 
-- `name` - a descriptive name for the metric
-- `config` - an object with some useful metadata
-    - `needs_history` - whether or not the conversation history should be considered in the metric. If this is enabled, the dataset will be treated like a whole conversation rather than individual inputs and outputs
-    - `needs_example_output` - whether or not it needs example output to compare to. If this is enabled, it will expect there to be outputs in the dataset
-- `metric_description` - A description of the metric*
-- `score` - an object representing what kind of output the metric should give
-    - `type` - can be any of the following:
-        - `"scale"` - an integer scale for the score (e.g. 1-5), there must also be a `"min"` and `"max"` field, where min < max
-        - `"boolean"` - true or false. No extra metadata needed
-        - `"percentage"` - a float percentage (0-100). No extra metadata needed
-    - `description` - A description of what the score represents*
+- `name` – Descriptive name for the metric.
+- `config` – Optional metadata (`needs_history`, `needs_example_output`, etc.).
+- `metric_description` – Description used by the evaluator LLM; be specific so scores are consistent.
+- `score` – Optional; defines score type:
+  - `"scale"` – Integer scale; include `min` and `max`.
+  - `"boolean"` – True/false.
+  - `"percentage"` – Float 0–100.
 
-*Make sure these fields are descriptive enough, as they will affect the behavior of the evaluator LLM
+The implementation uses **DeepEval’s GEval**; `OPENAI_API_KEY` is required.
 
-## Creating Tests
+## End-to-end example
 
-### Example JSON File
+1. Ensure you have a **result** dataset (with `input`, `output`, `actual_output`, and optionally `code` for each item). For example, `test/test_cases/cs1qa_small_results_v1-0.json`.
+2. Ensure you have at least one metric file, e.g. `test/metrics/similarity.json`.
+3. Create a test config, e.g. `test/tests/my_test.json`:
 
-```json
-{
-    "datasets": ["./data/dataset1.json", "./data/dataset2.json"],
-    "metrics": ["./metrics/metric1.json", "./metrics/metric2.json"] 
-}
-```
+   ```json
+   {
+       "datasets": "test_cases/cs1qa_small_results_v1-0.json",
+       "metrics": ["metrics/similarity.json"]
+   }
+   ```
 
-### Fields
+4. From the repo root, set `OPENAI_API_KEY` and run:
 
-- `datasets` - an array of paths to JSON files containing the datasets to be used in the test
-- `metrics` - an array of paths to JSON files containing the metrics to be used in the test
+   ```bash
+   cd sigil-ps-core/test
+   python evaluation.py tests/my_test.json results/my_output.json
+   ```
 
-Every dataset will be evaluated with every metric. Relative paths will depend on the directory from which you run the evaluation program.
+5. Open `results/my_output.json` for per-item scores and overall metric averages.
 
-## Run Evaluation
+## Troubleshooting
 
-Once you have set up all of these JSON files, you can run the evaluation program. Simply run `evaluation.py` and provide your test JSON file as an argument. Remember that relative paths will depend on where you run the program. For simplicity, assume that you will be running it from the directory where the `evaluation.py` script is located in the project, or define some other convention.
+- **Missing keys:** If you see `KeyError` or similar, check that every data point has `input`, `output`, and `actual_output`; the test config has `datasets` (string) and `metrics` (array).
+- **Path errors:** All paths in the test config are relative to the **current working directory**. Run from `test/` and use paths like `test_cases/...` and `metrics/...`.
+- **API key:** Ensure `OPENAI_API_KEY` is set in the environment where you run `evaluation.py`; the GEval model needs it.
 
-```bash
-python evaluation.py /path/to/test.json
-```
-
-The output should look something like this:
+The output structure is similar to:
 
 ![alt text](image.png)

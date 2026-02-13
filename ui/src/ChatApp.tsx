@@ -14,7 +14,10 @@ export function ChatApp() {
         submitFeedback,
         requestAuth,
         getFeedbackStatus,
-        getPendingFeedback
+        getPendingFeedback,
+        attachments,
+        pickFiles,
+        removeAttachment
     } = useChat();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -60,8 +63,17 @@ export function ChatApp() {
 
             {/* Error Display */}
             {error && (
-                <div className="border-b p-3 sigil-border" style={{ background: 'var(--sigil-error-bg)' }}>
-                    <p className="text-sm" style={{ color: 'var(--sigil-error-fg)' }}>{error}</p>
+                <div className="border-b p-3" style={{ 
+                    background: 'var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.15))',
+                    borderTop: '2px solid var(--vscode-inputValidation-errorBorder, #f14c4c)',
+                    borderBottom: '2px solid var(--vscode-inputValidation-errorBorder, #f14c4c)'
+                }}>
+                    <div className="flex items-center gap-2">
+                        <span style={{ color: 'var(--vscode-errorForeground, #f14c4c)' }}>⚠</span>
+                        <p className="text-sm font-semibold" style={{ 
+                            color: 'var(--vscode-errorForeground, #f14c4c)'
+                        }}>{error}</p>
+                    </div>
                 </div>
             )}
 
@@ -89,6 +101,9 @@ export function ChatApp() {
                 onSend={(msg, attachments) => sendMessage(msg, true, attachments)}
                 disabled={loading}
                 fileContext={fileContext}
+                attachments={attachments}
+                pickFiles={pickFiles}
+                removeAttachment={removeAttachment}
             />
         </div>
     );

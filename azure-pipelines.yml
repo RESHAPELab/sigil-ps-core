@@ -1,9 +1,12 @@
 trigger:
   branches:
     include:
-      - feat-*
+      - '*'
 
-pr: none
+pr:
+  branches:
+    include:
+      - main
 
 resources:
 - repo: self
@@ -31,7 +34,7 @@ stages:
 
 - stage: Test
   displayName: Deploy Test
-  condition: succeeded()
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - deployment: DeployTestContainerApp
     environment: 'Test'
@@ -63,7 +66,7 @@ stages:
 
 - stage: Production
   displayName: Deploy Production
-  condition: succeeded()
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - deployment: DeployProdContainerApp
     environment: 'Production'

@@ -32,7 +32,7 @@ flowchart LR
 - **Flask API** handles HTTP requests, manages sessions, and calls the LLM.
 - **Sigil (DSPy)** produces tutoring responses; personas and personalization are applied here.
 - **MySQL** stores users, personalization, personas, and related data.
-- The React app in `ui/` is built to `ui/dist` and served by Flask at `/` in production.
+- The React app in `ui/` is optional. If built locally, Flask can serve it from `ui/dist`, but the default container deployment is backend-only.
 
 ## Prerequisites
 
@@ -65,7 +65,7 @@ From the **root of this repo** (sigil-ps-core):
 docker-compose up --build
 ```
 
-The API is available at **http://localhost:80**. The Compose setup is for **local testing only**; do not use it for production deployment.
+The API is available at **http://localhost:80**. The default container build is backend-only, so `/api/*` and `/healthz` are the primary endpoints. The Compose setup is for **local testing only**; do not use it for production deployment.
 
 ### Local API (without Docker)
 
@@ -85,7 +85,8 @@ The API runs on port 5000. For production-style serving (e.g. Gunicorn), see you
 
 ### UI
 
-- **Production:** The Flask app serves the built UI from `ui/dist` at `/`. Build the UI from the `ui/` directory: `pnpm install && pnpm run build` (see [ui/README.md](ui/README.md)).
+- **Container deployment:** The default Docker image is backend-only and does not bundle the React app.
+- **Optional local UI:** If you build the UI into `ui/dist`, Flask will serve it at `/` when those files are present. Build from `ui/` with `pnpm install && pnpm run build` (see [ui/README.md](ui/README.md)).
 - **Development:** Run the UI dev server from `ui/`: `pnpm install && pnpm run dev` (e.g. http://localhost:5173). Point the UI at your local API if needed via its env (see `ui/.env.template`).
 
 ## Testing and evaluation
@@ -122,7 +123,7 @@ There are no pytest (or other) API unit tests in this repo at present. The prima
 | `api/` | Flask app, routes (prompt, feedback, personalization, personas, users), DB config and utilities. |
 | `llm/` | DSPy Sigil module and personas. |
 | `test/` | CLI chat script, evaluation script, dataset/metric definitions, and test configs. |
-| `ui/` | React (Vite) chat UI; built output is served by the API. |
+| `ui/` | Optional React (Vite) chat UI for local/browser workflows and the VS Code extension. |
 | `docs/` | Documentation (e.g. evaluation). |
 
 ## Links

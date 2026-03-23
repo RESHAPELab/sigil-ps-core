@@ -1,7 +1,7 @@
 import litellm
 import logging
 import os
-from flask import Flask, request, current_app, json, send_from_directory
+from flask import Flask, request, current_app, json, jsonify, send_from_directory
 from flask_cors import CORS
 from .util.db_util import init_database
 from .util.db_config import Config
@@ -14,7 +14,8 @@ from .extensions import mysql
 
 def create_app():
     static_dir = os.path.join(os.path.dirname(__file__), "../ui/dist")
-    app = Flask(__name__, static_folder=static_dir, static_url_path='')
+    has_static_ui = os.path.isdir(static_dir) and os.path.exists(os.path.join(static_dir, "index.html"))
+    app = Flask(__name__)
 
     litellm.cache = None
 
@@ -81,14 +82,23 @@ def create_app():
                 pretty_body = json.dumps(body, indent=2)
                 current_app.logger.info(f"JSON Body:\n{pretty_body}")
 
-    # Serve React static files
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve_react(path):
-        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-            return send_from_directory(app.static_folder, path)
-        else:
-            # Serve index.html for React Router
-            return send_from_directory(app.static_folder, 'index.html')
+    @app.get('/healthz')
+    def healthz():
+        return jsonify({'status': 'ok'}), 200
+
+    @app.get('/')
+    def index():
+        if has_static_ui:
+            return send_from_directory(static_dir, 'index.html')
+        return jsonify({'service': 'sigil-ps-core', 'status': 'ok'}), 200
+
+    if has_static_ui:
+        # Serve the optional React bundle when it is present in a local/dev build.
+        @app.route('/<path:path>')
+        def serve_react(path):
+            asset_path = os.path.join(static_dir, path)
+            if os.path.exists(asset_path):
+                return send_from_directory(static_dir, path)
+            return send_from_directory(static_dir, 'index.html')
 
     return app

@@ -47,6 +47,7 @@ Copy `api/.env.template` to `api/.env` and set:
 | Variable | Description |
 |----------|-------------|
 | `OPENAI_API_KEY` | Required for the LLM (DSPy/OpenAI). Also needed for evaluation. |
+| `DSPY_MODEL` | Optional DSPy model identifier for Sigil responses. Defaults to `openai/gpt-4o-mini`. |
 | `MYSQL_HOST` | MySQL host (e.g. `localhost` or `db` when using Docker Compose). |
 | `MYSQL_DATABASE` | Database name (e.g. `sigil_db`). |
 | `MYSQL_USER` | MySQL user. |

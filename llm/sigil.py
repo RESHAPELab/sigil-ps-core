@@ -1,14 +1,19 @@
 import dspy
+import os
 import sys
 from dotenv import load_dotenv
 from llm.personas import Persona
 
 load_dotenv()
 
-verbose = len(sys.argv) > 1 and (sys.argv[1] == '-v' or sys.argv[1] == '--verbose')
+verbose = len(sys.argv) > 1 and (sys.argv[1] == "-v" or sys.argv[1] == "--verbose")
 
-gpt = dspy.LM('openai/gpt-4o-mini')
-dspy.settings.configure(lm=gpt)
+DEFAULT_DSPY_MODEL = "openai/gpt-4o-mini"
+DSPY_MODEL = os.getenv("DSPY_MODEL", DEFAULT_DSPY_MODEL).strip() or DEFAULT_DSPY_MODEL
+
+lm = dspy.LM(DSPY_MODEL)
+dspy.settings.configure(lm=lm)
+
 
 class Sigil(dspy.Module):
     def __init__(self, history_capacity=6, feedback_capacity=3):

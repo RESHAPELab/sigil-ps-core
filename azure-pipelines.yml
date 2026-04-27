@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
       - feat-*
+      - CAT-prompt
 
 pr: none
 
@@ -10,6 +11,12 @@ resources:
 
 variables:
   tag: '$(Build.BuildId)'
+  dspyModel: 'openai/gpt-5-mini'
+  dspyMaxCompletionTokens: '2048'
+  testContainerAppName: 'sigil-api-cat-test'
+  prodContainerAppName: 'sigil-api-cat'
+  testDatabaseName: 'sigil_cat_test'
+  prodDatabaseName: 'sigil_cat_production'
 
 stages:
 - stage: Build
@@ -55,11 +62,12 @@ stages:
               acrUsername: 'reshapelab'
               acrPassword: '$(ACR-Password)'
               imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
-              containerAppName: 'sigil-api-test'
+              containerAppName: '$(testContainerAppName)'
               resourceGroup: 'reshapelab'
               containerAppEnvironment: 'Test'
               targetPort: '80'
-              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key-Test) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Test) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password) MAX_HISTORY=10'
+              ingress: 'external'
+              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key-Test) DSPY_MODEL=$(dspyModel) DSPY_MAX_COMPLETION_TOKENS=$(dspyMaxCompletionTokens) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(testDatabaseName) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password) MAX_HISTORY=10'
 
 - stage: Production
   displayName: Deploy Production
@@ -87,8 +95,9 @@ stages:
               acrUsername: 'reshapelab'
               acrPassword: '$(ACR-Password)'
               imageToDeploy: 'reshapelab.azurecr.io/sigil-api:$(tag)'
-              containerAppName: 'sigil-api'
+              containerAppName: '$(prodContainerAppName)'
               resourceGroup: 'reshapelab'
               containerAppEnvironment: 'Test'
               targetPort: '80'
-              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(MySQL-DBName-Production) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password) MAX_HISTORY=10'
+              ingress: 'external'
+              environmentVariables: 'OPENAI_API_KEY=$(OpenAI-API-Key) DSPY_MODEL=$(dspyModel) DSPY_MAX_COMPLETION_TOKENS=$(dspyMaxCompletionTokens) MYSQL_HOST=$(MySQL-Host) MYSQL_DATABASE=$(prodDatabaseName) MYSQL_USER=$(MySQL-User) MYSQL_PASSWORD=$(MySQL-Password) MAX_HISTORY=10'

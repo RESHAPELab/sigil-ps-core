@@ -9,9 +9,17 @@ load_dotenv()
 verbose = len(sys.argv) > 1 and (sys.argv[1] == "-v" or sys.argv[1] == "--verbose")
 
 DEFAULT_DSPY_MODEL = "openai/gpt-4o-mini"
+DEFAULT_DSPY_MAX_COMPLETION_TOKENS = 2048
+
 DSPY_MODEL = os.getenv("DSPY_MODEL", DEFAULT_DSPY_MODEL).strip() or DEFAULT_DSPY_MODEL
+DSPY_MAX_COMPLETION_TOKENS = int(
+    os.getenv("DSPY_MAX_COMPLETION_TOKENS", DEFAULT_DSPY_MAX_COMPLETION_TOKENS)
+)
 
 lm = dspy.LM(DSPY_MODEL)
+lm.kwargs.setdefault("temperature", 1)
+lm.kwargs["max_completion_tokens"] = DSPY_MAX_COMPLETION_TOKENS
+lm.kwargs.pop("max_tokens", None)
 dspy.settings.configure(lm=lm)
 
 
@@ -20,8 +28,8 @@ class Sigil(dspy.Module):
         self.history_capacity = history_capacity
         self.feedback_capacity = feedback_capacity
 
-        self.personalize = dspy.ChainOfThought(Personalize)
-        self.answer_question = dspy.Predict(Answer)
+        self.personalize = dspy.ChainOfThought(Personalize, temperature=1.0)
+        self.answer_question = dspy.Predict(Answer, temperature=1.0)
 
     # Given a list of feedback, and optionally an existing personalized prompt,
     # get/update personalized prompt to improve future responses

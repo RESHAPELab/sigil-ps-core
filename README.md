@@ -47,14 +47,15 @@ Copy `api/.env.template` to `api/.env` and set:
 | Variable | Description |
 |----------|-------------|
 | `OPENAI_API_KEY` | Required for the LLM (DSPy/OpenAI). Also needed for evaluation. |
-| `DSPY_MODEL` | Optional DSPy model identifier for Sigil responses. Defaults to `openai/gpt-4o-mini`. |
+| `DSPY_MODEL` | Optional DSPy model identifier for Sigil responses. Defaults to `openai/gpt-4o-mini`; this branch sets Azure deployments to `openai/gpt-5-mini`. |
+| `DSPY_MAX_COMPLETION_TOKENS` | Optional completion token cap passed to DSPy as `max_completion_tokens`. Defaults to `2048`. |
 | `MYSQL_HOST` | MySQL host (e.g. `localhost` or `db` when using Docker Compose). |
 | `MYSQL_DATABASE` | Database name (e.g. `sigil_db`). |
 | `MYSQL_USER` | MySQL user. |
 | `MYSQL_PASSWORD` | MySQL password. |
 | `MYSQL_ROOT_PASSWORD` | Optional; used by some DB setup flows. |
 
-**Note:** When using Docker Compose, the Compose file overrides DB-related env for the API container (local/test only; do not use this setup for production).
+**Note:** When using Docker Compose, `api/.env` supplies `OPENAI_API_KEY` and `DSPY_MODEL`; the Compose file overrides DB-related env for the API container (local/test only; do not use this setup for production).
 
 ## Running
 
@@ -71,7 +72,7 @@ The API is available at **http://localhost:80**. The Compose setup is for **loca
 ### Local API (without Docker)
 
 1. Ensure MySQL is running and the database exists (e.g. create `sigil_db`).
-2. Copy `api/.env.template` to `api/.env` and set `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, and `OPENAI_API_KEY`.
+2. Copy `api/.env.template` to `api/.env` and set `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, and `OPENAI_API_KEY`. Set `DSPY_MODEL=openai/gpt-5-mini` locally if you want to mirror the Azure deployment for this branch.
 3. From the repo root:
 
    ```bash
@@ -83,6 +84,17 @@ The API is available at **http://localhost:80**. The Compose setup is for **loca
    (On Unix/macOS use `export FLASK_APP=api.main`.)
 
 The API runs on port 5000. For production-style serving (e.g. Gunicorn), see your deployment docs.
+
+### Azure deployment
+
+This branch deploys to separate Azure Container Apps so it can run alongside the existing hosted Sigil backend:
+
+| Stage | Container App | MySQL database | DSPy model | Completion cap |
+|-------|---------------|----------------|------------|----------------|
+| Test | `sigil-api-cat-test` | `sigil_cat_test` | `openai/gpt-5-mini` | `2048` |
+| Production | `sigil-api-cat` | `sigil_cat_production` | `openai/gpt-5-mini` | `2048` |
+
+The VS Code extension should point at the selected Container App URL with the `/api` prefix, for example `https://<container-app-url>/api`.
 
 ### UI
 
